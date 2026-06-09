@@ -53,7 +53,7 @@ After deploy, add your Vercel URL to Google OAuth authorized redirect URIs.
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-NEXT_PUBLIC_CHALLENGE_START_DATE=2025-06-10   # Your challenge start date
+NEXT_PUBLIC_CHALLENGE_START_DATE=2026-06-10   # Your challenge start date
 ```
 
 ---

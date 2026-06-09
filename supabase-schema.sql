@@ -13,7 +13,7 @@ create table profiles (
 alter table profiles enable row level security;
 create policy "Profiles are viewable by all users" on profiles for select using (auth.role() = 'authenticated');
 create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
-create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
+create policy "Users can update own profile" on profiles for update using (auth.uid() = id) with check (auth.uid() = id);
 
 -- 2. runs
 create table runs (
@@ -31,7 +31,7 @@ create table runs (
 alter table runs enable row level security;
 create policy "Runs are viewable by all authenticated users" on runs for select using (auth.role() = 'authenticated');
 create policy "Users can insert own runs" on runs for insert with check (auth.uid() = user_id);
-create policy "Users can update own runs" on runs for update using (auth.uid() = user_id);
+create policy "Users can update own runs" on runs for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- 3. feed_posts
 create table feed_posts (
@@ -67,7 +67,7 @@ create table challenge_config (
   created_at timestamptz default now()
 );
 -- ⚠️ UPDATE THIS DATE to your actual challenge start date before going live:
-insert into challenge_config (start_date) values ('2025-06-10');
+insert into challenge_config (start_date) values ('2026-06-10');
 
 -- 6. Storage bucket for screenshots
 insert into storage.buckets (id, name, public) values ('screenshots', 'screenshots', true);
@@ -77,3 +77,13 @@ create policy "Anyone authenticated can upload screenshots"
 create policy "Screenshots are publicly viewable"
   on storage.objects for select
   using (bucket_id = 'screenshots');
+
+-- 7. Grants required for browser clients using Supabase Auth + RLS
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+alter default privileges in schema public
+  grant usage, select on sequences to authenticated;
