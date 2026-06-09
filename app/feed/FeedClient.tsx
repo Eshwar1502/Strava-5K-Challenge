@@ -8,6 +8,7 @@ import { Send } from 'lucide-react'
 const REACTION_EMOJIS = ['👏', '🔥', '💀', '😂']
 
 type Reaction = { id: string; user_id: string; emoji: string }
+type ProfileRow = { display_name: string; emoji: string }
 
 type Post = {
   id: string
@@ -15,12 +16,16 @@ type Post = {
   content: string
   is_system_post: boolean
   created_at: string
-  profiles: { display_name: string; emoji: string } | null
+  profiles: ProfileRow | null
   reactions: Reaction[]
 }
 
+type RawPost = Omit<Post, 'profiles'> & {
+  profiles: ProfileRow | ProfileRow[] | null
+}
+
 type Props = {
-  initialPosts: Post[]
+  initialPosts: RawPost[]
   currentUserId: string
   currentUserEmoji: string
   currentUserName: string
@@ -37,8 +42,15 @@ function buildReactions(reactions: Reaction[], currentUserId: string) {
   })
 }
 
+function normalizePost(post: RawPost): Post {
+  return {
+    ...post,
+    profiles: Array.isArray(post.profiles) ? post.profiles[0] ?? null : post.profiles,
+  }
+}
+
 export default function FeedClient({ initialPosts, currentUserId, currentUserEmoji, currentUserName }: Props) {
-  const [posts, setPosts] = useState<Post[]>(initialPosts)
+  const [posts, setPosts] = useState<Post[]>(() => initialPosts.map(normalizePost))
   const [message, setMessage] = useState('')
   const [posting, setPosting] = useState(false)
   const supabase = createClient()
@@ -50,7 +62,7 @@ export default function FeedClient({ initialPosts, currentUserId, currentUserEmo
       .select(`id, user_id, content, is_system_post, created_at, profiles(display_name, emoji), reactions(id, user_id, emoji)`)
       .order('created_at', { ascending: false })
       .limit(50)
-    if (data) setPosts(data as Post[])
+    if (data) setPosts((data as RawPost[]).map(normalizePost))
   }
 
   useEffect(() => {

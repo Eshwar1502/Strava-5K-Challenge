@@ -40,11 +40,13 @@ export default async function DashboardPage() {
     .from('runs')
     .select('user_id, distance_km, profiles(display_name, emoji)')
 
-  type RunRow = { user_id: string; distance_km: number; profiles: { display_name: string; emoji: string } | null }
+  type ProfileRow = { display_name: string; emoji: string }
+  type RunRow = { user_id: string; distance_km: number; profiles: ProfileRow | ProfileRow[] | null }
   const totals: Record<string, { km: number; name: string; emoji: string }> = {}
   for (const r of (allRuns as RunRow[] ?? [])) {
+    const runProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
     if (!totals[r.user_id]) {
-      totals[r.user_id] = { km: 0, name: r.profiles?.display_name ?? 'Runner', emoji: r.profiles?.emoji ?? '🏃' }
+      totals[r.user_id] = { km: 0, name: runProfile?.display_name ?? 'Runner', emoji: runProfile?.emoji ?? '🏃' }
     }
     totals[r.user_id].km += Number(r.distance_km)
   }
@@ -61,6 +63,7 @@ export default async function DashboardPage() {
 
   const today = new Date()
   const dayLabel = today.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })
+  type FeedPostRow = { content: string; profiles: ProfileRow | ProfileRow[] | null }
 
   return (
     <div className="pb-24 px-4 pt-6 space-y-5">
@@ -162,15 +165,18 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-2">
-            {(feedPosts as Array<{ content: string; profiles: { display_name: string; emoji: string } | null }>).map((post, i) => (
-              <div key={i} className="bg-surface border border-border rounded-xl p-3 flex items-start gap-2">
-                <span className="text-lg">{post.profiles?.emoji ?? '🏃'}</span>
-                <div>
-                  <span className="text-white/70 text-xs font-medium">{post.profiles?.display_name}</span>
-                  <p className="text-white text-sm mt-0.5">{post.content}</p>
+            {(feedPosts as FeedPostRow[]).map((post, i) => {
+              const postProfile = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+              return (
+                <div key={i} className="bg-surface border border-border rounded-xl p-3 flex items-start gap-2">
+                  <span className="text-lg">{postProfile?.emoji ?? '🏃'}</span>
+                  <div>
+                    <span className="text-white/70 text-xs font-medium">{postProfile?.display_name}</span>
+                    <p className="text-white text-sm mt-0.5">{post.content}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

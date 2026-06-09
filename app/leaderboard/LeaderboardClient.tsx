@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import LeaderboardCard from '@/components/ui/LeaderboardCard'
 import { computeStreak, computeBadges } from '@/lib/utils/badges'
 
+type ProfileRow = { display_name: string; emoji: string }
+
 type RunRow = {
   user_id: string
   day_number: number
@@ -12,7 +14,7 @@ type RunRow = {
   duration_seconds: number
   pace_seconds_per_km: number
   submitted_at: string
-  profiles: { display_name: string; emoji: string } | null
+  profiles: ProfileRow | ProfileRow[] | null
 }
 
 type Props = {
@@ -43,7 +45,8 @@ function buildSummaries(runs: RunRow[], currentDay: number, dailyKingId: string 
 
   return Object.entries(byUser)
     .map(([userId, userRuns]) => {
-      const profile = userRuns[0]?.profiles
+      const rawProfile = userRuns[0]?.profiles
+      const profile = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile
       const totalKm = userRuns.reduce((a, r) => a + Number(r.distance_km), 0)
       const streak = computeStreak(userRuns, currentDay)
       const runDays = userRuns.map((r) => r.day_number)
