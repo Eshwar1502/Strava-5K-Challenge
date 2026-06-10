@@ -8,7 +8,7 @@ export default async function Home() {
   // Get participant count
   const { count } = await supabase
     .from('profiles')
-    .select('*', { count: 'exact', head: true })
+    .select('*', { count: 'exact' })
 
   const startDate = getChallengeStartDate()
   const currentDay = getCurrentChallengeDay(startDate)
