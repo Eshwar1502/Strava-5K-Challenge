@@ -54,6 +54,34 @@ export default async function DashboardPage() {
     .sort((a, b) => b[1].km - a[1].km)
     .slice(0, 3)
 
+  // Get all users with streaks
+  const { data: allProfiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, emoji')
+    .order('created_at', { ascending: false })
+
+  const { data: allRunsForStreaks } = await supabase
+    .from('runs')
+    .select('user_id, day_number, duration_seconds, distance_km, pace_seconds_per_km, submitted_at')
+
+  const userStreaksData = (allProfiles ?? []).map((profile) => {
+    const userRuns = (allRunsForStreaks ?? []).filter((run) => run.user_id === profile.id)
+    const userStreak = computeStreak(userRuns, currentDay)
+    return {
+      id: profile.id,
+      displayName: profile.display_name,
+      emoji: profile.emoji,
+      streak: userStreak,
+    }
+  })
+
+  userStreaksData.sort((a, b) => {
+    if (b.streak !== a.streak) {
+      return b.streak - a.streak
+    }
+    return a.displayName.localeCompare(b.displayName)
+  })
+
   // Recent feed posts
   const { data: feedPosts } = await supabase
     .from('feed_posts')
@@ -177,6 +205,32 @@ export default async function DashboardPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* All Users Streaks */}
+      {userStreaksData.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">All Runners Streaks</h2>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {userStreaksData.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface border border-border hover:border-accent/40 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-2xl flex-shrink-0">{user.emoji}</span>
+                  <span className="text-white font-medium truncate text-sm">{user.displayName}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span className="text-accent font-bold text-sm">{user.streak}</span>
+                  <span className="text-text-secondary text-xs">
+                    {user.streak === 1 ? 'day' : 'days'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
